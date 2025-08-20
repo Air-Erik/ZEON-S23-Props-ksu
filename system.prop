@@ -1,0 +1,30 @@
+# --- Device identity (global) ---
+ro.product.manufacturer=samsung
+ro.product.brand=samsung
+ro.product.model=SM-S918B
+ro.product.device=dm3q
+ro.product.name=dm3qxx
+
+# --- Device identity seen from /system (чтобы "О телефоне" совпадало) ---
+ro.product.system.manufacturer=samsung
+ro.product.system.brand=samsung
+ro.product.system.model=SM-S918B
+ro.product.system.device=dm3q
+ro.product.system.name=dm3qxx
+
+# --- Build meta (глобально) ---
+ro.build.id=TP1A.220624.014
+ro.build.display.id=TP1A.220624.014.S918BXXU1AWBD
+ro.build.version.incremental=S918BXXU1AWBD
+ro.build.product=dm3q
+ro.build.description=dm3qxx-user 13 TP1A.220624.014 S918BXXU1AWBD release-keys
+
+# --- Unified fingerprint (global) ---
+ro.build.fingerprint=samsung/dm3qxx/dm3q:13/TP1A.220624.014/S918BXXU1AWBD:user/release-keys
+
+# --- Mirror fingerprints for partitions (если есть — переопределятся) ---
+ro.system.build.fingerprint=samsung/dm3qxx/dm3q:13/TP1A.220624.014/S918BXXU1AWBD:user/release-keys
+ro.product.build.fingerprint=samsung/dm3qxx/dm3q:13/TP1A.220624.014/S918BXXU1AWBD:user/release-keys
+ro.vendor.build.fingerprint=samsung/dm3qxx/dm3q:13/TP1A.220624.014/S918BXXU1AWBD:user/release-keys
+ro.odm.build.fingerprint=samsung/dm3qxx/dm3q:13/TP1A.220624.014/S918BXXU1AWBD:user/release-keys
+ro.system_ext.build.fingerprint=samsung/dm3qxx/dm3q:13/TP1A.220624.014/S918BXXU1AWBD:user/release-keys
