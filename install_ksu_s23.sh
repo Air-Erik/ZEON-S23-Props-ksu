@@ -191,13 +191,28 @@ sed -i \
   "${WORK}/post-fs-data.sh"
 chmod 0755 "${WORK}/post-fs-data.sh"
 
-cat > "${WORK}/service.sh" <<EOF
+cat > "${WORK}/service.sh" <<'EOF'
 #!/system/bin/sh
-MODDIR="\${0%/*}"
-echo "[ZB] service.sh start \$(date)" >> "\$MODDIR/props.log"
-settings put global device_name "${DEVICE_NAME_HUMAN}"
-settings put secure bluetooth_name "${DEVICE_NAME_HUMAN}"
+MODDIR="${0%/*}"
+LOG="$MODDIR/props.log"
+NAME="__DEVICE_NAME__"
+
+# ждём полной загрузки, чтобы Settings-провайдер был доступен
+until [ "$(getprop sys.boot_completed)" = "1" ]; do sleep 2; done
+sleep 3
+
+# пользовательское имя устройства и BT-имя
+settings put global device_name "$NAME"
+settings put secure bluetooth_name "$NAME"
+
+# закрепим через persist (на случай перезаписей)
+setprop persist.sys.device_name "$NAME"
+setprop persist.bluetooth.name "$NAME"
+
+echo "[ZB] service.sh set device_name='$NAME' at $(date)" >> "$LOG"
 EOF
+# подставляем читаемое имя из параметра скрипта
+sed -i "s/__DEVICE_NAME__/${DEVICE_NAME_HUMAN//\//\\/}/" "${WORK}/service.sh"
 chmod 0755 "${WORK}/service.sh"
 
 # ====== монтируем образ и копируем файлы ======
