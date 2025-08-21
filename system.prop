@@ -4,6 +4,12 @@ ro.product.model=SM-S918B
 ro.product.device=dm3q
 ro.product.name=dm3qxx
 
+ro.product.bliss.manufacturer=samsung
+ro.product.bliss.brand=samsung
+ro.product.bliss.model=SM-S918B
+ro.product.bliss.device=dm3q
+ro.product.bliss.name=dm3qxx
+
 ro.build.id=TP1A.220624.014
 ro.build.display.id=TP1A.220624.014.S918BXXU1AWBD
 ro.build.version.incremental=S918BXXU1AWBD

@@ -2,6 +2,7 @@
 MODDIR="${0%/*}"
 LOG="$MODDIR/props.log"
 FP="samsung/dm3qxx/dm3q:13/TP1A.220624.014/S918BXXU1AWBD:user/release-keys"
+SER=R58N10ABCDEF
 
 RESETPROP="/data/adb/ksu/bin/resetprop"
 [ -x "$RESETPROP" ] || RESETPROP="resetprop"
@@ -26,6 +27,15 @@ apply ro.product.brand samsung
 apply ro.product.model SM-S918B
 apply ro.product.device dm3q
 apply ro.product.name dm3qxx
+
+apply ro.product.bliss.manufacturer samsung
+apply ro.product.bliss.brand samsung
+apply ro.product.bliss.model SM-S918B
+apply ro.product.bliss.device dm3q
+apply ro.product.bliss.name dm3qxx
+
+apply ro.serialno "$SER"
+apply ro.boot.serialno "$SER"
 
 # базовые build-поля
 apply ro.build.id TP1A.220624.014
