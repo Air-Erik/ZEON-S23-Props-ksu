@@ -13,6 +13,7 @@ INCREMENTAL="S918BXXU1AWBD"
 FINGERPRINT="samsung/${PRODUCT}/${DEVICE}:${ANDROID_REL}/${BUILD_ID}/${INCREMENTAL}:user/release-keys"
 SERIAL="R58N10ABCDEF"
 DEVICE_NAME_HUMAN="Galaxy S23 Ultra"
+CHARACTERISTICS="phone"
 
 # ====== проверка IP ======
 if [[ -z "$IP" ]]; then
@@ -154,6 +155,7 @@ ro.build.version.incremental=${INCREMENTAL}
 ro.build.product=${DEVICE}
 ro.build.description=${PRODUCT}-user ${ANDROID_REL} ${BUILD_ID} ${INCREMENTAL} release-keys
 ro.build.fingerprint=${FINGERPRINT}
+ro.build.characteristics=${CHARACTERISTICS}
 
 # --- Fingerprints per-partition ---
 ro.system.build.fingerprint=${FINGERPRINT}
@@ -225,6 +227,7 @@ apply ro.build.version.incremental "$INCREMENTAL"
 apply ro.build.product "$DEVICE"
 apply ro.build.description "${PRODUCT}-user ${ANDROID_REL} ${BUILD_ID} ${INCREMENTAL} release-keys"
 apply ro.build.fingerprint "$FP"
+apply ro.build.characteristics "phone"
 
 for part in system product vendor odm system_ext; do
   apply "ro.${part}.build.fingerprint" "$FP"
@@ -269,10 +272,19 @@ EOF
 sed -i "s/__DEVICE_NAME__/${DEVICE_NAME_HUMAN//\//\\/}/" "${WORK}/service.sh"
 chmod 0755 "${WORK}/service.sh"
 
+# --- Заглушка features: убираем android.hardware.type.pc ---
+mkdir -p "${WORK}/system/etc/permissions"
+cat > "${WORK}/system/etc/permissions/android.hardware.type.pc.xml" <<'EOF'
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Overridden by ZB S23 Props: neutralize PC feature -->
+<permissions/>
+EOF
+
 # ====== монтируем образ и копируем файлы ======
 say "Монтирую ${TARGET_IMG} в ${MNT}…"
 adb shell "mkdir -p ${MNT} && ${BB} mount -t ext4 -o loop ${TARGET_IMG} ${MNT}" \
   || die "Не удалось смонтировать образ модулей."
+adb shell "mkdir -p ${MNT}/${MODID}/system/etc/permissions"
 
 say "Копирую модуль ${MODID}…"
 adb shell "mkdir -p ${MNT}/${MODID}"
@@ -280,6 +292,8 @@ adb push "${WORK}/module.prop"     "${MNT}/${MODID}/" >/dev/null
 adb push "${WORK}/system.prop"     "${MNT}/${MODID}/" >/dev/null
 adb push "${WORK}/post-fs-data.sh" "${MNT}/${MODID}/" >/dev/null
 adb push "${WORK}/service.sh"      "${MNT}/${MODID}/" >/dev/null
+adb push "${WORK}/system/etc/permissions/android.hardware.type.pc.xml" \
+         "${MNT}/${MODID}/system/etc/permissions/" >/dev/null
 
 say "Выставляю права…"
 adb shell "chown -R root:root ${MNT}/${MODID} && \
@@ -298,6 +312,7 @@ if [[ $USE_UPDATE_FLAG -eq 1 ]]; then
 fi
 
 # ====== ребут и финальная проверка ======
+adb shell 'pm clear com.google.android.gsf; pm clear com.google.android.gms; pm clear com.android.vending'
 say "Перезагружаю устройство…"
 adb reboot
 adb wait-for-device
