@@ -41,21 +41,75 @@ IMG_CUR="${BASE}/modules.img"
 IMG_UPD="${BASE}/modules_update.img"
 MNT="/data/local/tmp/ksu_modupd"
 
-# ====== проверка busybox/resetprop ======
-adb shell "[ -x ${BB} ] && [ -x ${BASE}/bin/resetprop ]" \
-  || die "На устройстве нет ${BB} / resetprop. Проверь установку KernelSU."
+# ====== bootstrap KernelSU на первом запуске ======
+say "Проверяю инициализацию KernelSU…"
+PKG_KSU="me.weishu.kernelsu"
+
+# если бинарей KSU нет — пробуем запустить менеджер (создаст /data/adb/ksu/bin/)
+adb shell '
+  BIN=/data/adb/ksu/bin/resetprop
+  if [ ! -x "$BIN" ]; then
+    am start -n '"$PKG_KSU"'/.ui.MainActivity >/dev/null 2>&1 || \
+    am start -n '"$PKG_KSU"'/.MainActivity      >/dev/null 2>&1 || \
+    monkey -p '"$PKG_KSU"' -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1 || true
+    # ждём появления бинарей до 30с
+    for i in $(seq 1 30); do
+      [ -x /data/adb/ksu/bin/resetprop ] && [ -x /data/adb/ksu/bin/busybox ] && break
+      sleep 1
+    done
+  fi
+'
+
+# проверка, что KSU инициализировался
+adb shell '[ -x /data/adb/ksu/bin/resetprop ] && [ -x /data/adb/ksu/bin/busybox ]' \
+  || die "KernelSU ещё не инициализирован. Откройте приложение KernelSU один раз и повторите запуск."
+
+# пути и бинарники KSU (теперь точно есть)
+BASE="/data/adb/ksu"
+BB="${BASE}/bin/busybox"
+IMG_CUR="${BASE}/modules.img"
+IMG_UPD="${BASE}/modules_update.img"
+MNT="/data/local/tmp/ksu_modupd"
+
+# ====== обеспечить наличие образа модулей ======
+say "Проверяю образы модулей…"
+adb shell '
+  set -e
+  BASE=/data/adb/ksu
+  IMG_CUR=$BASE/modules.img
+  IMG_UPD=$BASE/modules_update.img
+
+  if [ ! -f "$IMG_CUR" ] && [ ! -f "$IMG_UPD" ]; then
+    echo "[ZB] creating modules.img (64M ext4)…"
+    if command -v make_ext4fs >/dev/null 2>&1; then
+      make_ext4fs -l 64M "$IMG_CUR"
+    elif command -v mke2fs >/dev/null 2>&1; then
+      dd if=/dev/zero of="$IMG_CUR" bs=1M count=64
+      mke2fs -F -t ext4 "$IMG_CUR"
+    elif command -v mkfs.ext4 >/dev/null 2>&1; then
+      dd if=/dev/zero of="$IMG_CUR" bs=1M count=64
+      mkfs.ext4 -F "$IMG_CUR"
+    else
+      echo "[ZB] ERROR: нет make_ext4fs/mke2fs/mkfs.ext4 для создания образа."
+      exit 101
+    fi
+  fi
+' || die "Не удалось создать образ модулей. Откройте KernelSU и установите любой модуль один раз, затем перезапустите скрипт."
+
+# финальная проверка наличия какого-либо образа
+adb shell '[ -f '"$IMG_UPD"' ] || [ -f '"$IMG_CUR"' ]' \
+  || die "Отсутствуют modules.img и modules_update.img."
 
 # ====== выбрать, какой образ править ======
 TARGET_IMG=""
 USE_UPDATE_FLAG=0
-if adb shell "[ -f ${IMG_UPD} ]"; then
-  TARGET_IMG="${IMG_UPD}"; USE_UPDATE_FLAG=1
-  say "Найден ${IMG_UPD} — кладём модуль в стейджинг и поставим флаг update."
-elif adb shell "[ -f ${IMG_CUR} ]"; then
-  TARGET_IMG="${IMG_CUR}"
-  say "Нет modules_update.img — работаем прямо с ${IMG_CUR}."
+if adb shell '[ -f '"$IMG_UPD"' ]'; then
+  TARGET_IMG="${IMG_UPD}"
+  USE_UPDATE_FLAG=1
+  say "Найден ${IMG_UPD} — кладём модуль в стейджинг и ставим флаг update."
 else
-  die "Не найден ни ${IMG_UPD}, ни ${IMG_CUR}. Запусти BlissOS один раз или установи любой модуль через GUI."
+  TARGET_IMG="${IMG_CUR}"
+  say "Работаем прямо с ${IMG_CUR} (staging отсутствует)."
 fi
 
 # ====== локальная временная папка с файлами модуля ======
