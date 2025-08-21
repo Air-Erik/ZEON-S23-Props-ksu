@@ -255,4 +255,5 @@ say "Проверяю установку…"
 adb shell "ls -l /data/adb/modules/${MODID} || echo '(!) нет каталога модуля'"
 adb shell "cat /data/adb/modules/${MODID}/props.log 2>/dev/null || echo '(!) нет props.log (проверь после полной загрузки)'"
 adb shell "getprop | grep -E 'ro\\.(product|build)\\.|fingerprint' | head -n 30"
+adb shell 'settings get global device_name; settings get secure bluetooth_name' || true
 say "Готово."
